@@ -2,3 +2,9 @@ node_modules/
 build_MV2/
 build_MV3/
 source_code.zip
+
+# Mac Files
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
