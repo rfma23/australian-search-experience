@@ -37,13 +37,20 @@ CONST_SCHEMA_FOLDER_NAME = "schemas"
 CONST_SEQUENTIAL_MODE_ATTEMPTS = 3
 CONST_DYNAMODB_TICKER_TABLE_NAME = "aw-datenspende-bq-ticker"
 CONST_SANITISED_JSON_FOLDER_NAME = "sanitised_json"
-CONSTANT_AWS_LAMBDA_BQ_ARN = "arn:aws:lambda:us-east-2:519969025508:function:aw-datenspende-bq-api-v2"
-CONSTANT_API_ENDPOINT = "https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api"
-CONSTANT_S3_BUCKET_NAME = "aw-datenspende-bucket"
 CONSTANT_PROJECT_ID = json.loads(open(os.environ["GOOGLE_APPLICATION_CREDENTIALS"], 'r').read())['project_id']
 CONSTANT_DATASET_ID = "australian_search_experience_dataset"
 CONST_TABLE_SCHEMA_FILES = files_in_folder(join(os.getcwd(), "schemas"))
 CONSTANT_TABLE_IDS = ([x.replace("schema_", "").replace(".json", "") for x in CONST_TABLE_SCHEMA_FILES])
+
+# AWS Constants
+CONSTANT_S3_BUCKET_NAME = os.environ.get("DATASPENDE_BUCKET")
+CONST_BQ_BUCKET = os.environ.get("DATASPENDE_BQ_BUCKET")
+CONST_LAMBDA_PULL_ARN  = os.environ.get("DATASPENDE_LAMBDA_PULL_ARN")
+CONSTANT_AWS_LAMBDA_BQ_ARN = os.environ.get("LAMBDA_BQ_ARN")
+CONST_DYNAMODB_TICKER_TABLE_NAME = os.environ.get("DATASPENDE_BQ_TICKER_TABLE")
+CONSTANT_API_ENDPOINT = f"{os.environ.get('DATASPENDE_API_ENDPOINT')}/aw-datenspende-api"
+
+
 
 bq = bigquery.Client()
 s3 = boto3.client('s3')
@@ -179,6 +186,7 @@ def up_to_bigquery(platform):
 		try:
 			if (platform in t):
 				json_to_put = json.loads(open(join(os.getcwd(), "%s_%s" % (CONST_SANITISED_JSON_FOLDER_NAME,platform), "%s.json" % (t)), "rb").read())
+				# FIXME what is table_id? it's not defined 
 				upload_json_to_bigquery(table_id, json_to_put)
 		except Exception as e:
 			# Errors can be disregarded here for lack of data obtained for certain schemas
@@ -374,6 +382,7 @@ if __name__ == "__main__":
 			if (evaluation["passed"]):
 				all_user_sanitised.append(row)
 			else:
+				# FIXME what is failed tests? Not defined, add failed_tests = 0
 				failed_tests += 1
 				print("Failed at...")
 				print(json.dumps(row))

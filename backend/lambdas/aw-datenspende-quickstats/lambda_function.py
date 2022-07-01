@@ -10,6 +10,8 @@ import boto3
 import os
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "creds.json"
+table_name = os.environ.get('DATASPENDE_USERS_TABLE')
+bucket_name = os.environ.get("DATASPENDE_BUCKET")
 
 from google.cloud import bigquery
 bq = bigquery.Client()
@@ -44,7 +46,7 @@ def lambda_handler(event, context):
 		'youtube_promoted_result',
 		'youtube_video']
 	# Calculate the required statistics
-	n_users = client.describe_table(TableName="aw-datenspende-users")["Table"]["ItemCount"]
+	n_users = client.describe_table(TableName=table_name)["Table"]["ItemCount"]
 	user_stats = dict()
 	sum_google_search = sum([get_table_row_count(x) for x in google_search_tables])
 	sum_google_videos = sum([get_table_row_count(x) for x in google_videos_tables])
@@ -57,7 +59,7 @@ def lambda_handler(event, context):
 	user_stats["n_total"] = "{:,}".format(sum_google_search+sum_google_news+sum_google_videos+sum_youtube)
 	user_stats["users"] = n_users
 	# Upload the result to S3
-	boto3.resource("s3") .Object("aw-datenspende-bucket", "user_stats.json").put(
+	boto3.resource("s3") .Object(bucket_name, "user_stats.json").put(
 		Body=json.dumps(user_stats), ACL="public-read", CacheControl="max-age=0,no-cache,no-store,must-revalidate", 
 		ContentType="application/json")
 	return { 'statusCode': 200, 'body' : json.dumps(dict()) }

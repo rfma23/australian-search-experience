@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  australian-search-experience
+
+  Sample SAM Template for australian-search-experience
+
+Resources:
+  # ---------------------------------------------
+  #           S3 Buckets
+  # ---------------------------------------------
+
+  DatenspendeBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: Private
+
+  DatenspendeBqBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: Private
+
+  # ---------------------------------------------
+  #           Lambda Functions
+  # ---------------------------------------------
+
+  DatenspendeApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Name: datenspende-api
+
+  DatenspendePullFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./lambdas/aw-datenspende-pull
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      MemorySize: 512
+      Timeout: 600
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeDynamoTable
+      Environment:
+        Variables:
+          DATASPENDE_TABLE: !Ref DatenspendeDynamoTable
+
+  DatenspendeBqApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./lambdas/aw-datenspende-bq-api
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      MemorySize: 512
+      Timeout: 900
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeBqTickerDynamoTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref DatenspendePullFunction
+        # FIXME Recursive Lambda Invocation
+        # - LambdaInvokePolicy:
+        #     FunctionName: !Ref DatenspendeBqApiFunction
+        - S3FullAccessPolicy:
+            BucketName: !Ref DatenspendeBqBucket
+        - S3FullAccessPolicy:
+            BucketName: !Ref DatenspendeBucket
+      Environment:
+        Variables:
+          DATASPENDE_BQ_TICKER_TABLE: !Ref DatenspendeBqTickerDynamoTable
+          DATASPENDE_BUCKET: !Ref DatenspendeBucket
+          DATASPENDE_BQ_BUCKET: !Ref DatenspendeBqBucket
+          DATASPENDE_LAMBDA_PULL_ARN: !GetAtt DatenspendePullFunction.Arn
+          DATASPENDE_API_ENDPOINT: !Ref DatenspendeApiGateway
+      Events:
+        BQHourlyGoogleNews:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Input: '{ "platform": "google_news" }'
+        BQHourlyGoogleSearch:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Input: '{ "platform": "google_search" }'
+        BQHourlyGoogleVideos:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Input: '{ "platform": "google_videos" }'
+        BQHourlyUserAppend:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Input: '{ "platform": "users" }'
+        BQHourlyYoutube:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Input: '{ "platform": "youtube" }'
+
+  DatenspendeApi:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      CodeUri: ./lambdas/aw-datenspende-api
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Description: "f"
+      MemorySize: 6000
+      Timeout: 900
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeDynamoTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeIpCacheDynamoTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeUsersDynamoTable
+        - S3FullAccessPolicy:
+            BucketName: !Ref DatenspendeBucket
+      Environment:
+        Variables:
+          DATASPENDE_TABLE: !Ref DatenspendeDynamoTable
+          DATASPENDE_IPCACHE_TABLE: !Ref DatenspendeIpCacheDynamoTable
+          DATASPENDE_USERS_TABLE: !Ref DatenspendeUsersDynamoTable
+          DATASPENDE_BUCKET: !Ref DatenspendeBucket
+      Events:
+        Schedule1:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+        Api1:
+          Type: Api
+          Properties:
+            Path: /aw-datenspende-api
+            Method: ANY
+            RestApiId: !Ref DatenspendeApiGateway
+
+  DatenspendeQuickstatsApi:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      CodeUri: ./lambdas/aw-datenspende-quickstats
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Description: "f"
+      MemorySize: 128
+      Timeout: 300
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DatenspendeUsersDynamoTable
+        - S3FullAccessPolicy:
+            BucketName: !Ref DatenspendeBucket
+      Environment:
+        Variables:
+          DATASPENDE_USERS_TABLE: !Ref DatenspendeUsersDynamoTable
+          DATASPENDE_BUCKET: !Ref DatenspendeBucket
+      Events:
+        RunDaily:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+
+  # ---------------------------------------------
+  #           Dynamo DB Tables
+  # ---------------------------------------------
+  DatenspendeUsersDynamoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: aw-datenspende-users
+      PrimaryKey:
+        Name: uuid
+        Type: String
+
+  DatenspendeIpCacheDynamoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: aw-datenspende-ip-cache
+      PrimaryKey:
+        Name: uuid
+        Type: String
+
+  DatenspendeDynamoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: aw-datenspende
+      PrimaryKey:
+        Name: uuid
+        Type: String
+
+  DatenspendeBqTickerDynamoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: aw-datenspende-bq-ticker
+      PrimaryKey:
+        Name: uuid
+        Type: String
+
+  # ---------------------------------------------
+  #           Outputs
+  # ---------------------------------------------
+# Outputs:
+#   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#   # Find out more about other implicit resources you can reference within SAM
+#   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#   HelloWorldApi:
+#     Description: "API Gateway endpoint URL for Prod stage for Datenspende Api"
+#     Value: !Sub "https://${DatenspendeApiGateway}.execute-api.${AWS::Region}.amazonaws.com/aw-datenspende-api"

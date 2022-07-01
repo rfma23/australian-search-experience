@@ -7,8 +7,11 @@ import json
 	Note: Uncomment the desired code block to test the relative functionality
 '''
 
+# FIXME
+API_ENDPOINT = "https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api"
+
 '''
-print(requests.post("https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api",
+print(requests.post("API_ENDPOINT",
 	json={
 	"event" : "get_table_details"
 }).content)
@@ -16,7 +19,7 @@ print(requests.post("https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-d
 
 
 '''
-print(requests.post("https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api",
+print(requests.post("API_ENDPOINT",
 	json={
 	"event" : "get_users",
 	"afterDate" : 1628327727
@@ -24,7 +27,7 @@ print(requests.post("https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-d
 '''
 
 '''
-print(requests.post("https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api",
+print(requests.post("API_ENDPOINT",
 	json={
 	"event" : "register_user",
 	"data" : {

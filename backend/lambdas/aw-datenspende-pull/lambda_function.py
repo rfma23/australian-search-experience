@@ -5,6 +5,7 @@
 	table.
 	
 '''
+import os
 import boto3
 import simplejson as json
 
@@ -20,7 +21,7 @@ def apply_key_condition_function(applyfirstExpression):
 def lambda_handler(event, context):
 	resultsToReturn = list()
 	# Default to the current target table
-	target_table = "aw-datenspende"
+	target_table = os.environ.get('DATASPENDE_TABLE')
 	# Set the target table if specified...
 	if ('table' in event):
 		target_table = event['table']

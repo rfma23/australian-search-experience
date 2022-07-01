@@ -17,6 +17,7 @@ from os.path import isfile, join, realpath, dirname
 	Constants
 '''
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=join(os.getcwd(), "creds.json")
+# FIXME
 CONSTANT_S3_BUCKET_NAME = "aw-datenspende-bucket"
 CONSTANT_PROJECT_ID = json.loads(open(os.environ["GOOGLE_APPLICATION_CREDENTIALS"], 'r').read())['project_id']
 CONSTANT_DATASET_ID = "australian_search_experience_dataset"
@@ -96,6 +97,7 @@ else:
 		Usage: python inject.py 1.1.4.5
 	'''
 	s3 = boto3.resource('s3')
+	# FIXME
 	CONSTANT_S3_BUCKET_NAME = "aw-datenspende-bucket"
 	CONSTANT_S3_FILE_NAME = "inject.%s.json" % (sys.argv[1])
 

@@ -1018,6 +1018,7 @@
                   var registerUserRequest = $.ajax({
                         type: 'POST',
                         crossDomain: true,
+                        // FIXME
                         url: "https://65i9k6fick.execute-api.us-east-2.amazonaws.com/aw-datenspende-api",
                         data: JSON.stringify({
                           "event" : "register_user", 
@@ -1154,6 +1155,7 @@
       }
 
       function downloadOpera() {
+        // FIXME
         var file_path = 'https://aw-datenspende-bucket.s3.us-east-2.amazonaws.com/Drag_me_onto_the_Opera_browser.crx';
         var a = document.createElement('A');
         a.href = file_path;
